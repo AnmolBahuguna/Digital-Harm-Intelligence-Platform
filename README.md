@@ -158,7 +158,6 @@ Geographic Spread: Uttarakhand (68%), Delhi (22%), UP (10%)
 
 ⚠️ RECOMMENDATION: Do not engage. Block immediately.
 
-[View Pattern Details] [Report This Number] [Share Alert]
 Hyper-Local Intelligence:
 District: Haridwar, Uttarakhand
 DRS: 7.8/10 (High Risk)
@@ -543,9 +542,9 @@ Create .env files in each service directory:
 bash# backend/api-gateway/.env
 PORT=5000
 JWT_SECRET=your_jwt_secret_here
-DATABASE_URL=postgresql://user:password@localhost:5432/dhip
-MONGODB_URI=mongodb://localhost:27017/dhip
-REDIS_URL=redis://localhost:6379
+DATABASE_URL=
+MONGODB_URI=mongodb:
+REDIS_URL=
 
 # intelligence-engine/.env
 FLASK_PORT=8000
