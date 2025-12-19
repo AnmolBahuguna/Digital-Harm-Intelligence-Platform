@@ -727,11 +727,6 @@ PostgreSQL 15+
 MongoDB 6+
 Redis 7+
 
-Quick Setup (Local Development)
-bash# Clone repository
-git clone https://github.com/your-org/dhip.git
-cd dhip
-
 # Start all backend services with Docker Compose
 docker-compose up -d
 
