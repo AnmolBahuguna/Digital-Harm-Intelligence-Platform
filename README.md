@@ -534,9 +534,9 @@ flutter pub get
 flutter run -d chrome
 
 # Access application
-# Web: http://localhost:3000
-# API: http://localhost:5000
-# API Docs: http://localhost:5000/api-docs
+# Web: 
+# API: 
+# API Docs:
 Environment Variables
 Create .env files in each service directory:
 bash# backend/api-gateway/.env
