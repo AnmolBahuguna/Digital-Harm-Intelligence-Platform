@@ -16,6 +16,7 @@ import SignInPage from './pages/Auth/SignInPage';
 import SignUpPage from './pages/Auth/SignUpPage';
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -60,6 +61,9 @@ function App() {
                     <EvidenceVault />
                   </ProtectedRoute>
                 } />
+
+                {/* Catch-all for unknown routes */}
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Layout>
           </Router>
