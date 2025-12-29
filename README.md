@@ -1563,40 +1563,40 @@ Deployment to Vercel
 
 ### Why Judges Should Choose DHIP
 
-#### **Innovation (30% weightage) ✅**
-- ✅ Paradigm shift from reaction to prediction
-- ✅ First temporal mutation tracking system
-- ✅ Real-time AI threat analysis
-- ✅ Privacy-first anonymous architecture
-- ✅ Trauma-informed support systems
+#### **Innovation (30% weightage) **
+-  Paradigm shift from reaction to prediction
+-  First temporal mutation tracking system
+-  Real-time AI threat analysis
+- Privacy-first anonymous architecture
+- Trauma-informed support systems
 
-#### **Technical Depth (25% weightage) ✅**
-- ✅ Advanced AI integration (Google Gemini)
-- ✅ Scalable microservices architecture
-- ✅ Modern tech stack (React + TypeScript + Vite)
-- ✅ Enterprise-grade security
-- ✅ Real-time performance (<2s analysis)
+#### **Technical Depth (25% weightage) **
+-  Advanced AI integration (Google Gemini)
+-  Scalable microservices architecture
+-  Modern tech stack (React + TypeScript + Vite)
+-  Enterprise-grade security
+-  Real-time performance (<2s analysis)
 
-#### **Social Impact (20% weightage) ✅**
-- ✅ Addresses 847% surge in digital scams
-- ✅ Targets ₹120 crore quarterly losses
-- ✅ Breaks stigma for 68% unreported cases
-- ✅ Inclusive design for women AND men
-- ✅ Measurable outcomes (₹100Cr saved Year 1)
+#### **Social Impact (20% weightage) **
+-  Addresses 847% surge in digital scams
+-  Targets ₹120 crore quarterly losses
+-  Breaks stigma for 68% unreported cases
+-  Inclusive design for women AND men
+-  Measurable outcomes (₹100Cr saved Year 1)
 
-#### **Feasibility (15% weightage) ✅**
-- ✅ Live working demo on Vercel
-- ✅ 8 fully functional pages
-- ✅ 15,000+ lines of production code
-- ✅ Clear Round 2 roadmap
-- ✅ Realistic timeline and milestones
+#### **Feasibility (15% weightage) **
+-  Live working demo on Vercel
+-  8 fully functional pages
+-  15,000+ lines of production code
+-  Clear Round 2 roadmap
+-  Realistic timeline and milestones
 
 #### **Team & Execution (10% weightage) ✅**
-- ✅ 4-member balanced team (Frontend, Backend, AI, DevOps)
-- ✅ Clear role division and ownership
-- ✅ Professional documentation
-- ✅ Proven delivery (8 pages in Round 1)
-- ✅ Scalability mindset for Round 2
+-  4-member balanced team (Frontend, Backend, AI, DevOps)
+-  Clear role division and ownership
+-  Professional documentation
+-  Proven delivery (8 pages in Round 1)
+-  Scalability mindset for Round 2
 
 ---
 
@@ -1745,4 +1745,5 @@ Let's build a safer digital India, together.
 **Team DHIP**
 
 [View Live Demo](https://dhip-digital-harm-intelligence-plat.vercel.app/) • [GitHub](https://github.com/AnmolBahuguna/Digital-Harm-Intelligence-Platform) • [Contact](mailto:dhip.team@example.com)
+
 
