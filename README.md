@@ -1,7 +1,7 @@
 🛡️ DHIP - Digital Harm Intelligence Platform
 Round 1 Submission: The Nest
 Theme: AI/ML + Open Innovation
-Live Demo: dhip-digital-harm-intelligence-plat.vercel.app
+Live Demo: https://dhip-digital-harm-intelligence-plat.vercel.app/
 Team Size: 4 Members
 
 📋 Table of Contents
@@ -1082,3 +1082,4 @@ Let's protect millions before they become statistics.
 ├── /intelligence-engine (Python ML)
 ├── docker-compose.yml
 └── DEMO_VIDEO.mp4 (or YouTube link)
+
