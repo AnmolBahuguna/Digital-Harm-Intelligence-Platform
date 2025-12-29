@@ -14,8 +14,12 @@ import {
   TrendingUp,
   Eye,
   FileText,
-  Users
+  Users,
+  Activity,
+  Globe,
+  Clock
 } from 'lucide-react';
+import ThreatChart from '../../components/Charts/ThreatChart';
 
 interface UserStats {
   threatsChecked: number;
@@ -33,7 +37,7 @@ const DashboardPage: React.FC = () => {
     evidenceStored: 0,
     accountAge: 0
   });
-  const [recentActivity, setRecentActivity] = useState([
+  const [recentActivity] = useState([
     {
       id: '1',
       type: 'threat_check',
@@ -55,6 +59,24 @@ const DashboardPage: React.FC = () => {
       timestamp: '3 days ago',
       result: 'encrypted'
     }
+  ]);
+
+  // Sample data for charts
+  const [threatData] = useState([
+    { date: 'Mon', threats: 12, reports: 8 },
+    { date: 'Tue', threats: 19, reports: 12 },
+    { date: 'Wed', threats: 15, reports: 10 },
+    { date: 'Thu', threats: 25, reports: 18 },
+    { date: 'Fri', threats: 22, reports: 15 },
+    { date: 'Sat', threats: 30, reports: 22 },
+    { date: 'Sun', threats: 28, reports: 20 }
+  ]);
+
+  const [categoryData] = useState([
+    { name: 'Phishing', value: 35, color: '#ef4444' },
+    { name: 'Scams', value: 28, color: '#f59e0b' },
+    { name: 'Harassment', value: 20, color: '#8b5cf6' },
+    { name: 'Impersonation', value: 17, color: '#3b82f6' }
   ]);
 
   useEffect(() => {
@@ -253,6 +275,14 @@ const DashboardPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Analytics Dashboard */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Threat Analytics
+              </h3>
+              <ThreatChart data={threatData} categories={categoryData} />
             </div>
 
             {/* Security Status */}

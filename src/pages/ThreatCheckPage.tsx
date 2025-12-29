@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Shield, AlertTriangle, CheckCircle, XCircle, Clock, Loader2, Lock, Globe, Phone, Mail, CreditCard, MessageSquare, FileText, Send, X } from 'lucide-react';
+import ThreatResult from '../components/ThreatAnalyzer/ThreatResult';
 
 const ThreatCheckPage = () => {
   const [inputData, setInputData] = useState('');
