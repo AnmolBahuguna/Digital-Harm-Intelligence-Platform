@@ -1,6 +1,7 @@
 🛡️ DHIP - Digital Harm Intelligence Platform
 Round 1 Submission: The Nest
 Theme: AI/ML + Open Innovation
+Team nane:Null Syndicate
 Team Size: 4 Members
 Live Demo: https://dhip-digital-harm-intelligence-plat.vercel.app/
 
@@ -1608,7 +1609,7 @@ Deployment to Vercel
 - **Documentation**: This README + inline code documentation
 
 ### Team Contact
-
+-**Team Name**:Null Syndicate
 - **Team Lead**: [SHASHANK TIWARI]
 - **Team Email**:shashanktiwari028@gmail.com
 
@@ -1744,3 +1745,4 @@ Let's build a safer digital India, together.
 **Team DHIP**
 
 [View Live Demo](https://dhip-digital-harm-intelligence-plat.vercel.app/) • [GitHub](https://github.com/AnmolBahuguna/Digital-Harm-Intelligence-Platform) • [Contact](mailto:dhip.team@example.com)
+
