@@ -1,0 +1,246 @@
+version: '3.8'
+
+services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: dhip-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: dhip-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: dhip
+      POSTGRES_USER: dhip_user
+      POSTGRES_PASSWORD: dhip_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # MongoDB for threat data
+  mongodb:
+    image: mongo:7
+    container_name: dhip-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dhip_user
+      MONGO_INITDB_ROOT_PASSWORD: dhip_secure_password
+      MONGO_INITDB_DATABASE: dhip_threats
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongodb/init.js:/docker-entrypoint-initdb.d/init.js
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # Main DHIP Backend API
+  dhip-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dhip-api
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      REDIS_URL: redis://redis:6379
+      POSTGRES_URL: postgresql://dhip_user:dhip_secure_password@postgres:5432/dhip
+      MONGODB_URL: mongodb://dhip_user:dhip_secure_password@mongodb:27017/dhip_threats
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+      ALLOWED_ORIGINS: http://localhost:5173,https://dhip.example.com
+    depends_on:
+      - redis
+      - postgres
+      - mongodb
+    networks:
+      - dhip-network
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: dhip-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - dhip-api
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dhip-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dhip-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: dhip_admin_password
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # Elasticsearch for logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: dhip-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # Kibana for log visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: dhip-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # Logstash for log processing
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: dhip-logstash
+    volumes:
+      - ./docker/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./docker/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+    ports:
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: dhip-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: dhip_user
+      RABBITMQ_DEFAULT_PASS: dhip_secure_password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+  # Celery Worker for AI processing
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: dhip-celery-worker
+    environment:
+      CELERY_BROKER_URL: amqp://dhip_user:dhip_secure_password@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      REDIS_URL: redis://redis:6379
+      POSTGRES_URL: postgresql://dhip_user:dhip_secure_password@postgres:5432/dhip
+      MONGODB_URL: mongodb://dhip_user:dhip_secure_password@mongodb:27017/dhip_threats
+    depends_on:
+      - redis
+      - postgres
+      - mongodb
+      - rabbitmq
+    networks:
+      - dhip-network
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+  # Frontend Application
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: dhip-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3001
+      VITE_WS_URL: ws://localhost:3001
+    depends_on:
+      - dhip-api
+    networks:
+      - dhip-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:
+  mongodb_data:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:
+  rabbitmq_data:
+
+networks:
+  dhip-network:
+    driver: bridge

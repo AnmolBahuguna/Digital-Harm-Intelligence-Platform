@@ -1,12 +1,12 @@
 
-       import React, { useState, useEffect, useRef } from 'react';
-import { Shield, Lock, Users, Scale, Heart, Phone, AlertCircle, CheckCircle, X, Loader2, Info, MapPin, Navigation } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Shield, Lock, Users, Scale, Heart, Phone, AlertCircle, CheckCircle, X, Loader2, MapPin } from 'lucide-react';
 
 // Mocking useLanguage for standalone functionality
 const useLanguage = () => {
   return {
-    t: (key) => {
-      const translations = {
+    t: (key: string) => {
+      const translations: Record<string, string> = {
         'women.title': 'Women Safety Hub',
         'women.subtitle': 'Comprehensive protection, legal resources, and emergency tools',
         'women.layer1': 'Immediate Safety',
@@ -31,10 +31,10 @@ const WomenSafetyHub = () => {
   const [panicActive, setPanicActive] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [sendingStatus, setSendingStatus] = useState('idle'); // idle, sending, sent, error
-  const timerRef = useRef(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Location State
-  const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [locationStatus, setLocationStatus] = useState('detecting'); // detecting, locked, error
 
  const TWILIO_ACCOUNT_SID = import.meta.env.VITE_TWILIO_ACCOUNT_SID;
@@ -55,13 +55,13 @@ const WomenSafetyHub = () => {
       return;
     }
 
-    const successHandler = (position) => {
+    const successHandler = (position: GeolocationPosition) => {
       const { latitude, longitude } = position.coords;
       setCurrentLocation({ latitude, longitude });
       setLocationStatus('locked');
     };
 
-    const errorHandler = (err) => {
+    const errorHandler = (err: GeolocationPositionError) => {
       // Log detailed error for debugging
       console.warn(`Geolocation Warning: Code ${err.code} - ${err.message}`);
       
@@ -104,7 +104,7 @@ const WomenSafetyHub = () => {
         setCountdown((prev) => prev - 1);
       }, 1000);
     } else if (panicActive && countdown === 0 && sendingStatus === 'idle') {
-      clearInterval(timerRef.current);
+      clearInterval(timerRef.current!);
       sendEmergencyMessage();
     }
 
@@ -151,7 +151,7 @@ const WomenSafetyHub = () => {
         console.error("Twilio API Error:", errorData);
         
         if (errorData.code === 63015) {
-           alert(`Message Failed: The number ${VERIFIED_TARGET_NUMBER} has not joined the Twilio Sandbox. Please send "join <code >" to ${TWILIO_FROM_NUMBER} on WhatsApp.`);
+           alert(`Message Failed: The number ${VERIFIED_TARGET_NUMBER} has not joined Twilio Sandbox. Please send "join <code>" to ${TWILIO_FROM_NUMBER} on WhatsApp.`);
            setSendingStatus('error');
         } 
         else if (errorData.status === 400 || !response.ok) {
@@ -223,9 +223,9 @@ const WomenSafetyHub = () => {
     'Have they asked you to move to a private platform?'
   ];
 
-  const [realityCheckAnswers, setRealityCheckAnswers] = useState([]);
+  const [realityCheckAnswers, setRealityCheckAnswers] = useState<boolean[]>([]);
 
-  const handleRealityCheck = (index, answer) => {
+  const handleRealityCheck = (index: number, answer: boolean) => {
     const newAnswers = [...realityCheckAnswers];
     newAnswers[index] = answer;
     setRealityCheckAnswers(newAnswers);

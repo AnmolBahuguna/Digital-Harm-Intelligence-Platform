@@ -1,58 +1,31 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Shield, AlertTriangle, CheckCircle, XCircle, Clock, Loader2, Lock, Globe, Phone, Mail, CreditCard, MessageSquare, FileText, Send, X } from 'lucide-react';
-import ThreatResult from '../components/ThreatAnalyzer/ThreatResult';
+import { apiClient } from '../lib/api-client';
 
 const ThreatCheckPage = () => {
   const [inputData, setInputData] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
-  const [error, setError] = useState(null);
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<'phone' | 'url' | 'email' | 'upi'>('url');
   
   // State for Extra Features
-  const [loadingAction, setLoadingAction] = useState(null); // 'simulate' | null
-  const [simulation, setSimulation] = useState(null);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null); // 'simulate' | null
+  const [simulation, setSimulation] = useState<any>(null);
   
   // Complaint Form State
   const [showComplaintForm, setShowComplaintForm] = useState(false);
   const [complaintData, setComplaintData] = useState({ name: '', number: '', message: '' });
-  const [submissionStatus, setSubmissionStatus] = useState(null); // 'submitting' | 'success' | 'error' | null
+  const [submissionStatus, setSubmissionStatus] = useState<string | null>(null); // 'submitting' | 'success' | 'error' | null
 
-  // Hardcoded API Key as requested
-  const apiKey = import.meta.env.VITE_APIKEY;
-
-  // Helper for API calls with retry logic
-  const callGeminiAPI = async (payload) => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  // Initialize WebSocket connection
+  useEffect(() => {
+    apiClient.initializeSocket();
     
-    let lastError = null;
-    const maxRetries = 3;
-
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error?.message || `API Error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        return data;
-      } catch (err) {
-        console.warn(`Attempt ${i + 1} failed:`, err);
-        lastError = err;
-        // Exponential backoff: 1s, 2s, 4s
-        if (i < maxRetries - 1) {
-          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
-        }
-      }
-    }
-    throw lastError;
-  };
+    return () => {
+      apiClient.disconnect();
+    };
+  }, []);
 
   const analyzeInput = async () => {
     if (!inputData.trim()) return;
@@ -65,53 +38,17 @@ const ThreatCheckPage = () => {
     setError(null);
 
     try {
-      const prompt = `
-        Analyze the following input for cybersecurity threats: "${inputData}".
-        
-        1. Identify the Category: Email, URL, Phone Number, UPI ID, or Unknown.
-        2. Perform a Google Search to check if this specific input is reported in fraud databases, consumer complaints, or phishing lists.
-        3. Assess the Risk Score (0-10) based on your findings. 
-           - 0-2: Safe (Official domains, known contacts)
-           - 3-5: Low/Medium (Unknown, no history)
-           - 6-10: High/Critical (Reported scams, suspicious patterns, phishing)
-        4. Provide specific threats and recommendations.
+      const result = await apiClient.analyzeThreat({
+        entity: inputData,
+        type: selectedType,
+        isAnonymous: true,
+      });
 
-        Return ONLY a JSON object with this schema:
-        {
-          "riskScore": number,
-          "category": "string",
-          "threats": ["string"],
-          "recommendations": ["string"],
-          "confidence": number,
-          "summary": "string" 
-        }
-      `;
-
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
-      };
-
-      const result = await callGeminiAPI(payload);
-
-      let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error("No data received from AI.");
-      
-      // Clean up markdown formatting if present
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      
-      // Attempt to find JSON start/end if there is extra text
-      const jsonStart = text.indexOf('{');
-      const jsonEnd = text.lastIndexOf('}');
-      if (jsonStart !== -1 && jsonEnd !== -1) {
-        text = text.substring(jsonStart, jsonEnd + 1);
-      }
-
-      setAnalysis(JSON.parse(text));
+      setAnalysis(result);
 
     } catch (err) {
       console.error("Analysis Error:", err);
-      setError(err.message || "Unable to complete analysis. Please check your connection.");
+      setError((err as Error).message || "Unable to complete analysis. Please check your connection.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -122,26 +59,15 @@ const ThreatCheckPage = () => {
     if (!analysis) return;
     setLoadingAction('simulate');
     try {
-      const prompt = `
-        Generate a realistic example of a scam message (SMS, WhatsApp, or Email) that a fraudster would use involving this identifier: "${inputData}".
-        The goal is to educate the user on what patterns to look out for. 
-        Context: The user input is categorized as ${analysis.category} with a risk summary of: ${analysis.summary}.
-        
-        Return ONLY a JSON object: { "type": "SMS/Email/WhatsApp", "content": "The message text here..." }
-      `;
-
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
+      // For now, create a simple simulation based on the analysis
+      const simulationData = {
+        type: selectedType === 'email' ? 'Email' : selectedType === 'phone' ? 'SMS/WhatsApp' : 'Website',
+        content: `This is a simulated scam message targeting ${selectedType}: "${inputData}". Risk Score: ${analysis.riskScore}/10. Always verify before responding or clicking.`
       };
-
-      const result = await callGeminiAPI(payload);
-      
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      setSimulation(JSON.parse(text));
+      setSimulation(simulationData);
     } catch (e) {
       console.error(e);
-      setSimulation({ type: "Error", content: `Failed to generate: ${e.message}` });
+      setSimulation({ type: "Error", content: `Failed to generate: ${(e as Error).message}` });
     } finally {
       setLoadingAction(null);
     }
@@ -158,7 +84,7 @@ const ThreatCheckPage = () => {
     setSubmissionStatus(null);
   };
 
-  const handleComplaintSubmit = async (e) => {
+  const handleComplaintSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmissionStatus('submitting');
     
@@ -195,7 +121,7 @@ const ThreatCheckPage = () => {
     }
   };
 
-  const getRiskLevel = (score) => {
+  const getRiskLevel = (score: number) => {
     if (score <= 2) return { 
       level: 'Safe', 
       color: 'text-green-600 bg-green-50 border-green-200', 
@@ -224,7 +150,7 @@ const ThreatCheckPage = () => {
 
   const riskInfo = analysis ? getRiskLevel(analysis.riskScore) : null;
 
-  const getCategoryIcon = (category) => {
+  const getCategoryIcon = (category: string) => {
     const cat = category?.toLowerCase() || '';
     if (cat.includes('email')) return <Mail className="h-5 w-5" />;
     if (cat.includes('phone')) return <Phone className="h-5 w-5" />;
@@ -234,23 +160,46 @@ const ThreatCheckPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 py-12">
-      {/* Background Overlay */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"></div>
-      
-      <div className="relative max-w-3xl mx-auto z-10">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 py-8 sm:py-12">
+      <div className="relative max-w-4xl sm:max-w-5xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="text-center mb-10 pt-8">
-          <div className="inline-flex items-center justify-center p-4 bg-blue-600 rounded-2xl shadow-lg shadow-blue-200 dark:shadow-blue-900/50 mb-6">
-            <Shield className="h-10 w-10 text-white" />
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center justify-center p-3 sm:p-4 bg-blue-600 dark:bg-blue-700 rounded-2xl shadow-lg shadow-blue-200 dark:shadow-blue-900 mb-4 sm:mb-6">
+            <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Threat Intelligence Scanner
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Enter a URL, phone number, email, or UPI ID to scan for potential fraud.
           </p>
+        </div>
+
+        {/* Type Selector */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Analysis Type</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { type: 'url' as const, icon: Globe, label: 'Website URL' },
+              { type: 'phone' as const, icon: Phone, label: 'Phone Number' },
+              { type: 'email' as const, icon: Mail, label: 'Email Address' },
+              { type: 'upi' as const, icon: CreditCard, label: 'UPI ID' },
+            ].map(({ type, icon: Icon, label }) => (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                className={`p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center space-y-2 ${
+                  selectedType === type
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400'
+                }`}
+              >
+                <Icon className="h-6 w-6" />
+                <span className="text-sm font-medium">{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Input Section */}
@@ -495,7 +444,7 @@ const ThreatCheckPage = () => {
                 </h3>
                 {analysis.threats && analysis.threats.length > 0 ? (
                   <ul className="space-y-3">
-                    {analysis.threats.map((threat, index) => (
+                    {analysis.threats.map((threat: string, index: number) => (
                       <li key={index} className="flex items-start bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-100 dark:border-orange-800">
                         <div className="h-1.5 w-1.5 rounded-full bg-orange-400 mt-2 mr-3 flex-shrink-0" />
                         <span className="text-gray-700 dark:text-gray-300 text-sm">{threat}</span>
@@ -516,7 +465,7 @@ const ThreatCheckPage = () => {
                   Security Advice
                 </h3>
                 <ul className="space-y-3">
-                  {analysis.recommendations && analysis.recommendations.map((rec, index) => (
+                  {analysis.recommendations && analysis.recommendations.map((rec: string, index: number) => (
                     <li key={index} className="flex items-start bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
                       <CheckCircle className="h-4 w-4 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
                       <span className="text-gray-700 dark:text-gray-300 text-sm">{rec}</span>

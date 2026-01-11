@@ -1,0 +1,26 @@
+# Celery Worker Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' celery
+
+# Copy application code
+COPY --chown=celery:celery . .
+
+# Switch to non-root user
+USER celery
+
+# Start Celery worker
+CMD ["celery", "-A", "celery_app", "worker", "--loglevel=info"]
