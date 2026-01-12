@@ -1,7 +1,6 @@
 🛡️ DHIP Round 2 - Production-Grade Cyber Intelligence Platform
 
 **Team: Null Syndicate**  
-**Live Demo:** [Coming Soon]
 
 ## 📊 Executive Summary
 
