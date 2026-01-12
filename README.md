@@ -573,11 +573,6 @@ DHIP-Platform/
 - **Full Stack Dev:** PRIYANSHU NEGI
 - **DevOps Lead:** SHASHANK TIWARI
 
-**Repository:** https://github.com/null-syndicate/dhip-platform
-
-**Live Demo:** [Coming Soon]
-
-**Documentation:** https://docs.dhip-platform.com
 
 ---
 
